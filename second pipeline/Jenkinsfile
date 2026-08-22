@@ -1,0 +1,17 @@
+pipeline {
+  agent {
+    docker {image 'python:3.11-slim'}
+  }
+  stages {
+    stage ("Check python version") {
+      steps {
+        sh 'python3 --version'
+      }
+    }
+    stage("To run python script") {
+      steps {
+        sh 'python3 simple.py'
+      }
+    }
+  }
+}
