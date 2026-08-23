@@ -6,7 +6,7 @@ pipeline {
             agent any
             steps {
                 checkout scm
-                stash name: 'source', includes: '**'
+                stash name: 'source', includes: 'multi-agent-pipeline/**'
             }
         }
 
@@ -32,6 +32,8 @@ pipeline {
                         unstash 'source'
                         dir('multi-agent-pipeline/backend') {
                             sh '''
+                                python -m venv venv
+                                . venv/bin/activate
                                 pip install -r requirements.txt
                                 pytest test_app.py -v
                             '''
@@ -45,6 +47,8 @@ pipeline {
                         unstash 'source'
                         dir('multi-agent-pipeline/db') {
                             sh '''
+                                python -m venv venv
+                                . venv/bin/activate
                                 pip install -r requirements.txt
                                 pytest test_init_db.py -v
                                 python init_db.py
