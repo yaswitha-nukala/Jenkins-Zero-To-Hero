@@ -17,6 +17,7 @@ pipeline {
                     agent { docker { image 'node:18-alpine' } }
                     steps {
                         unstash 'source'
+                        sh 'echo "--- Workspace contents (Frontend) ---" && find . -maxdepth 3'
                         dir('frontend') {
                             sh '''
                                 echo "Validating frontend..."
@@ -30,6 +31,7 @@ pipeline {
                     agent { docker { image 'python:3.11-slim' } }
                     steps {
                         unstash 'source'
+                        sh 'echo "--- Workspace contents (Backend) ---" && find . -maxdepth 3'
                         dir('backend') {
                             sh '''
                                 pip install -r requirements.txt
@@ -43,6 +45,7 @@ pipeline {
                     agent { docker { image 'python:3.11-slim' } }
                     steps {
                         unstash 'source'
+                        sh 'echo "--- Workspace contents (Database) ---" && find . -maxdepth 3'
                         dir('db') {
                             sh '''
                                 pip install -r requirements.txt
