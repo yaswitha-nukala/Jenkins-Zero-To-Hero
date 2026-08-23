@@ -3,14 +3,14 @@ pipeline {
     docker {image 'python:3.11-slim'}
   }
   stages {
-    stage ("Check python version") {
+    stage ("Python version check") {
       steps {
         sh 'python3 --version'
       }
     }
-    stage("To run python script") {
+    stage("Running python program") {
       steps {
-        sh 'python3 simple.py'
+        sh 'python3 "second pipeline/simple.py"'
       }
     }
   }
