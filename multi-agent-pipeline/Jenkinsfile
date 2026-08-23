@@ -1,0 +1,71 @@
+pipeline {
+    agent none
+
+    stages {
+        stage('Checkout') {
+            agent any
+            steps {
+                checkout scm
+            }
+        }
+
+        stage('Build & Test Tiers') {
+            parallel {
+
+                stage('Frontend') {
+                    agent { docker { image 'node:18-alpine' } }
+                    steps {
+                        dir('frontend') {
+                            sh '''
+                                echo "Validating frontend..."
+                                grep -q "<html" index.html && echo "✅ index.html looks valid"
+                            '''
+                        }
+                    }
+                }
+
+                stage('Backend') {
+                    agent { docker { image 'python:3.11-slim' } }
+                    steps {
+                        dir('backend') {
+                            sh '''
+                                pip install -r requirements.txt
+                                pytest test_app.py -v
+                            '''
+                        }
+                    }
+                }
+
+                stage('Database') {
+                    agent { docker { image 'python:3.11-slim' } }
+                    steps {
+                        dir('db') {
+                            sh '''
+                                pip install -r requirements.txt
+                                pytest test_init_db.py -v
+                                python init_db.py
+                            '''
+                        }
+                    }
+                }
+            }
+        }
+
+        stage('Integration Check') {
+            agent any
+            steps {
+                echo "✅ Frontend, Backend, and DB all passed their own checks."
+                echo "🚀 Simulating deployment of the full 3-tier app..."
+            }
+        }
+    }
+
+    post {
+        success {
+            echo '🎉 Pipeline completed successfully — all 3 tiers verified!'
+        }
+        failure {
+            echo '❌ Pipeline failed — check which tier stage broke.'
+        }
+    }
+}
