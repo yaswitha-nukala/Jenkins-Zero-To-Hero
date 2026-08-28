@@ -1,73 +1,66 @@
 pipeline {
-    agent none
-
-    stages {
-        stage('Checkout') {
-            agent any
-            steps {
-                checkout scm
-                stash name: 'source', includes: 'multi-agent-pipeline/**'
+    agent none 
+        stages {
+            stage("Checkout"){
+                agent any 
+                steps {
+                    checkout scm
+                    stash name : source , includes : "multi-agent-pipeline/**"
+                }
             }
-        }
-
-        stage('Build & Test Tiers') {
-            parallel {
-
-                stage('Frontend') {
-                    agent { docker { image 'node:18-alpine' } }
-                    steps {
-                        unstash 'source'
-                        dir('multi-agent-pipeline/frontend') {
-                            sh '''
+            stage("Build & test") {
+                parallel {
+                    stage("frontend") {
+                        agent {docker {image 'node:18-alpine'}}
+                        steps {
+                            unstash 'source'
+                            dir('multi-agent-pipeline/frontend') {
+                                sh '''
                                 echo "Validating frontend..."
                                 grep -q "<html" index.html && echo "✅ index.html looks valid"
-                            '''
+                                '''
+                            }
                         }
                     }
-                }
-
-                stage('Backend') {
-                    agent { docker { image 'python:3.11-slim' } }
-                    steps {
-                        unstash 'source'
-                        dir('multi-agent-pipeline/backend') {
-                            sh '''
+                    stage("Backend") {
+                        agent {docker {image 'python:3.11-slim'}}
+                        steps {
+                            unstash 'source'
+                            dir('multi-agent-pipeline/backend') {
+                                sh '''
                                 python -m venv venv
                                 . venv/bin/activate
                                 pip install -r requirements.txt
                                 pytest test_app.py -v
-                            '''
+                                '''
+                            }
                         }
                     }
-                }
-
-                stage('Database') {
-                    agent { docker { image 'python:3.11-slim' } }
-                    steps {
-                        unstash 'source'
-                        dir('multi-agent-pipeline/db') {
-                            sh '''
+                    stage("DB") {
+                        agent {docker { image 'python:3.11-slim'}}
+                        steps {
+                            unstash 'source'
+                            dir('multi-agent-pipeline/db'){
+                                sh '''
                                 python -m venv venv
                                 . venv/bin/activate
                                 pip install -r requirements.txt
                                 pytest test_init_db.py -v
                                 python init_db.py
-                            '''
+                                '''
+                            }
                         }
                     }
                 }
             }
-        }
-
-        stage('Integration Check') {
-            agent any
-            steps {
-                echo "✅ Frontend, Backend, and DB all passed their own checks."
-                echo "🚀 Simulating deployment of the full 3-tier app..."
+            stage("integration check") {
+                agent any 
+                steps {
+                    echo "✅ Frontend, Backend, and DB all passed their own checks."
+                    echo "🚀 Simulating deployment of the full 3-tier app..."
+                }
             }
         }
-    }
-
     post {
         success {
             echo '🎉 Pipeline completed successfully — all 3 tiers verified!'
